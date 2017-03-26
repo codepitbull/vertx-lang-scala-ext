@@ -1,0 +1,31 @@
+This repository contains a KryoCodec for the Vert.x-EventBus.
+
+It uses https://github.com/twitter/chill[Twitter Chill] to provide serialization of all Scala-constructs
+and supports Case Classes out of the box.
+
+== How to get it
+This project is currently not published to Central so you will first have to do a `mvn clean install` to
+get it installed in your local repo.
+
+To use it add the following line to sbt:
+
+`libraryDependencies += "de.codepitbull.vertx.scala.ext" %% "kryo-codec" % "3.4.2-SNAPSHOT"`
+
+== How to use it
+It takes one line of code to enable the codec on the eventbus.
+
+[source,scala]
+----
+KryoMessageCodec().register(vertx.eventBus())
+----
+
+Sending a Scala-object via the eventbus now only requires to use the codec:
+
+[source,scala]
+----
+vertx.eventBus().consumer[ACaseClass]("myreceiver").handler(a => println(a.body))
+
+val kryoSender = vertx.eventBus().sender("myreceiver", DeliveryOptions().setCodecName(KryoMessageCodec.CodecName)).send(test)
+
+sender.send(ACaseClass("12", Some(1)))
+----
