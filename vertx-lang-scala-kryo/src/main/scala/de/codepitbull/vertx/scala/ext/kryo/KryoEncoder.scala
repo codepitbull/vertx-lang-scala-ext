@@ -8,11 +8,19 @@ import com.twitter.chill.ScalaKryoInstantiator
 
 /**
   * Makes Kryo-encoding magically Thread-safe.
+  * @param instantiator the instantiator used to create new Kryo i9sntances
+  * @param registeredClasses if None the Kryo instance will de/serialize any class, otherwise only the ones provided
   */
-class KryoEncoder(instantiator: ScalaKryoInstantiator) {
+class KryoEncoder(instantiator: ScalaKryoInstantiator, registeredClasses: Option[List[Class[_]]] = None) {
   private val tl = new ThreadLocal[Tuple3[Kryo, Input, Output]] {
     override def initialValue(): Tuple3[Kryo, Input, Output] = {
       val kryo = instantiator.newKryo()
+      registeredClasses match {
+        case Some(l) =>
+          kryo.setRegistrationRequired(true)
+          l.foreach(c => kryo.register(c))
+        case None =>
+      }
       val output = new Output(new ByteArrayOutputStream)
       val input = new Input()
       (kryo, input, output)
@@ -37,5 +45,6 @@ class KryoEncoder(instantiator: ScalaKryoInstantiator) {
 
 object KryoEncoder {
   val instantiator: ScalaKryoInstantiator = new ScalaKryoInstantiator()
-  def apply(): KryoEncoder = new KryoEncoder(instantiator)
+  def apply(registeredClasses: Option[List[Class[_]]] = None): KryoEncoder =
+    new KryoEncoder(instantiator, registeredClasses)
 }
